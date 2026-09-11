@@ -57,6 +57,12 @@ export default function LoginPage() {
         >
           Iniciar sesión
         </button>
+        <p className="text-sm text-center text-muted-foreground">
+          ¿No tienes cuenta?{" "}
+          <a href="/register" className="text-primary underline">
+            Regístrate
+          </a>
+        </p>
       </form>
     </main>
   );

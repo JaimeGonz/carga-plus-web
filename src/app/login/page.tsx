@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { ApiErrorResponse, LoginCredentials } from "@/lib/types/auth";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -14,14 +15,16 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
 
+    const credentials: LoginCredentials = { email, password };
+
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application-json" },
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify(credentials),
     });
 
     if (!res.ok) {
-      const data = await res.json();
+      const data: ApiErrorResponse = await res.json();
       setError(data.message ?? "Error al iniciar sesión");
       return;
     }

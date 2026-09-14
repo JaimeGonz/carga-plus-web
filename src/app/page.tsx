@@ -1,9 +1,9 @@
-import { ThemeToggle } from "@/components/theme-toggle";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-export default function Home() {
-  return (
-    <main className="min-h-screen bg-background text-foreground flex items-center justify-center">
-      <ThemeToggle />
-    </main>
-  );
+export default async function RootPage() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("access_token");
+
+  redirect(token ? "/dashboard" : "/login");
 }

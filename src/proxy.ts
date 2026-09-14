@@ -1,22 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PROTECTED_PATHS = ["/dashboard"]
+const PUBLIC_PATHS = ["/", "/login", "/register"];
 
+export function proxy(request: NextRequest) {
+  const { pathname } = request.nextUrl;
 
-export function proxy(request: NextRequest ){
-    const { pathname } = request.nextUrl;
-    const isProtected = PROTECTED_PATHS.some((path) => pathname.startsWith(path));
+  if (PUBLIC_PATHS.includes(pathname)) {
+    return NextResponse.next();
+  }
 
-    if(isProtected) {
-        const token = request.cookies.get("access_token");
-        if(!token){
-            return NextResponse.redirect(new URL("/login", request.url))
-        }
-    }
+  const token = request.cookies.get("access_token");
+  if (!token) {
+    return NextResponse.redirect(new URL("/login", request.url));
+  }
 
-    return NextResponse.next()
+  return NextResponse.next();
 }
 
 export const config = {
-    matcher: ["/dashboard/:path*"]
-}
+  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico).*)"],
+};

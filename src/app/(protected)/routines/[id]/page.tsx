@@ -1,9 +1,13 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
-import { fetchRoutineDetail } from "@/lib/api/routines";
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
+import Link from "next/link";
+import { fetchRoutineDetail } from "@/lib/api/routines";
+import { fetchExercises } from "@/lib/api/exercises";
+import { formatDayOfWeek } from "@/lib/format";
+import { Card } from "@/components/ui/card";
+import { ArrowLeft } from "lucide-react";
 
 export default function RoutineDetailPage() {
   const params = useParams<{ id: string }>();
@@ -17,30 +21,123 @@ export default function RoutineDetailPage() {
     queryFn: () => fetchRoutineDetail(params.id),
   });
 
-  if (isLoading) return <p className="p-6">Cargando rutina...</p>;
+  const { data: exercises } = useQuery({
+    queryKey: ["exercises"],
+    queryFn: fetchExercises,
+    staleTime: 1000 * 60 * 30, // 30 min — el catálogo cambia poco
+  });
+
+  const exerciseName = (id: number) =>
+    exercises?.find((e) => e.id === id)?.name ?? `Ejercicio #${id}`;
+
+  if (isLoading)
+    return (
+      <p className="p-6 text-sm text-muted-foreground">Cargando rutina...</p>
+    );
   if (error)
-    return <p className="p-6 text-destructive">Error al cargar la rutina.</p>;
+    return (
+      <p className="p-6 text-sm text-destructive">Error al cargar la rutina.</p>
+    );
   if (!routine) return null;
 
-  return (
-    <div className="p-6 space-y-4">
-      <h1 className="font-heading text-3xl">{routine.name}</h1>
+  const totalSets = routine.routineExercises.reduce(
+    (sum, re) => sum + re.sets,
+    0,
+  );
 
-      <div className="space-y-3">
+  return (
+    <div className="p-6 max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="md:col-span-2 space-y-4">
+        <Link
+          href="/routines"
+          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Rutinas
+        </Link>
+
+        <h1 className="font-heading text-4xl tracking-wide">{routine.name}</h1>
+
         {routine.routineExercises
           .sort((a, b) => a.order - b.order)
           .map((re) => (
-            <Card key={re.id} className="p-4">
-              <p className="font-semibold">Ejercicio #{re.exerciseId}</p>
-              <p className="text-sm text-muted-foreground">
-                {re.sets} sets × {re.repsMin}-{re.repsMax} reps
-                {re.rir !== null && ` · RIR ${re.rir}`}
-              </p>
-              {re.notes && (
-                <p className="text-sm text-muted-foreground mt-1">{re.notes}</p>
-              )}
+            <Card key={re.id} className="overflow-hidden py-0 gap-0">
+              <div className="p-4 pb-3">
+                <p className="font-semibold text-base">
+                  {exerciseName(re.exerciseId)}
+                </p>
+                {re.notes && (
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {re.notes}
+                  </p>
+                )}
+              </div>
+              <table className="w-full text-base">
+                <thead>
+                  <tr className="text-xs text-muted-foreground border-t border-border">
+                    <th className="text-left font-normal py-2.5 px-4 w-16 text-xs">
+                      SERIE
+                    </th>
+                    <th className="text-left font-normal py-2 px-4">
+                      RANGO DE REPS
+                    </th>
+                    {re.rir !== null && (
+                      <th className="text-left font-normal py-2 px-4 w-20">
+                        RIR
+                      </th>
+                    )}
+                  </tr>
+                </thead>
+                <tbody>
+                  {Array.from({ length: re.sets }, (_, i) => i + 1).map(
+                    (setNumber) => (
+                      <tr
+                        key={setNumber}
+                        className={
+                          setNumber % 2 === 0 ? "bg-muted dark:bg-muted/40" : ""
+                        }
+                      >
+                        <td className="py-3 px-4 font-heading text-xl text-primary">
+                          {setNumber}
+                        </td>
+                        <td className="py-3 px-4 text-base">
+                          {re.repsMin}-{re.repsMax}
+                        </td>
+                        {re.rir !== null && (
+                          <td className="py-3 px-4 text-muted-foreground">
+                            {re.rir}
+                          </td>
+                        )}
+                      </tr>
+                    ),
+                  )}
+                </tbody>
+              </table>
             </Card>
           ))}
+      </div>
+
+      <div className="space-y-4">
+        <Card className="p-4">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+            Resumen
+          </p>
+          <div className="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p className="font-heading text-2xl text-primary">
+                {routine.routineExercises.length}
+              </p>
+              <p className="text-xs text-muted-foreground">Ejercicios</p>
+            </div>
+            <div>
+              <p className="font-heading text-2xl text-primary">{totalSets}</p>
+              <p className="text-xs text-muted-foreground">Series totales</p>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-3 pt-3 border-t border-border">
+            {formatDayOfWeek(routine.dayOfWeek)}
+          </p>
+        </Card>
       </div>
     </div>
   );

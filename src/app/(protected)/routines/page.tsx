@@ -1,10 +1,10 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
-import { fetchRoutines } from "@/lib/api/routines";
 import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
+import { fetchRoutines } from "@/lib/api/routines";
+import { formatDayOfWeek } from "@/lib/format";
+import { ChevronRight } from "lucide-react";
 
 export default function RoutinesPage() {
   const {
@@ -16,31 +16,38 @@ export default function RoutinesPage() {
     queryFn: fetchRoutines,
   });
 
-  if (isLoading) return <p className="p-6">Cargando rutinas...</p>;
-  if (error) {
-    return <p className="p-6 text-destructive">Error al cargar rutinas.</p>;
-  }
-
   return (
-    <div className="p-6 space-y-4">
-      <h1 className="font-heading text-3xl">RUTINAS</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className="p-6 max-w-2xl mx-auto space-y-6">
+      <div>
+        <h1 className="font-heading text-4xl tracking-wide">RUTINAS</h1>
+        <p className="text-sm text-muted-foreground">
+          Tus días de entrenamiento
+        </p>
+      </div>
+
+      {isLoading && (
+        <p className="text-sm text-muted-foreground">Cargando rutinas...</p>
+      )}
+      {error && (
+        <p className="text-sm text-destructive">Error al cargar rutinas.</p>
+      )}
+      {routines?.length === 0 && (
+        <p className="text-sm text-muted-foreground">Aún no tienes rutinas.</p>
+      )}
+
+      <div className="space-y-2 flex flex-col gap-0.5">
         {routines?.map((routine) => (
           <Link key={routine.id} href={`/routines/${routine.id}`}>
-            <Card
-              key={routine.id}
-              className="p-4 flex items-center justify-between hover:bg-accent transition-colors"
-            >
+            <div className="rounded-lg border border-border bg-card p-4 flex items-center justify-between hover:border-primary transition-colors duration-200 cursor-pointer">
               <div>
                 <p className="font-semibold">{routine.name}</p>
-                {routine.description && (
-                  <p className="text-sm text-muted-foreground">
-                    {routine.description}
-                  </p>
-                )}
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {formatDayOfWeek(routine.dayOfWeek)}
+                  {routine.type && ` · ${routine.type}`}
+                </p>
               </div>
-              {routine.type && <Badge variant="outline">{routine.type}</Badge>}
-            </Card>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </div>
           </Link>
         ))}
       </div>

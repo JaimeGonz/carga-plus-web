@@ -15,7 +15,10 @@ export function Navbar() {
 
   return (
     <nav className="border-b border-border px-6 py-4 flex items-center justify-between">
-      <span className="font-heading text-xl">CARGA+</span>
+      <span className="font-heading text-xl tracking-wide inline-flex items-baseline">
+        CARGA
+        <span className="text-primary text-2xl leading-none ml-0.5">+</span>
+      </span>
       <div className="flex gap-2">
         <ThemeToggle />
         <Button variant="outline" onClick={handleLogout}>

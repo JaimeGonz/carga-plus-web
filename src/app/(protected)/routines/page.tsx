@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { fetchRoutines } from "@/lib/api/routines";
 import { useQuery } from "@tanstack/react-query";
+import Link from "next/link";
 
 export default function RoutinesPage() {
   const {
@@ -25,20 +26,22 @@ export default function RoutinesPage() {
       <h1 className="font-heading text-3xl">RUTINAS</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {routines?.map((routine) => (
-          <Card
-            key={routine.id}
-            className="p-4 flex items-center justify-between"
-          >
-            <div>
-              <p className="font-semibold">{routine.name}</p>
-              {routine.description && (
-                <p className="text-sm text-muted-foreground">
-                  {routine.description}
-                </p>
-              )}
-            </div>
-            {routine.type && <Badge variant="outline">{routine.type}</Badge>}
-          </Card>
+          <Link key={routine.id} href={`/routines/${routine.id}`}>
+            <Card
+              key={routine.id}
+              className="p-4 flex items-center justify-between hover:bg-accent transition-colors"
+            >
+              <div>
+                <p className="font-semibold">{routine.name}</p>
+                {routine.description && (
+                  <p className="text-sm text-muted-foreground">
+                    {routine.description}
+                  </p>
+                )}
+              </div>
+              {routine.type && <Badge variant="outline">{routine.type}</Badge>}
+            </Card>
+          </Link>
         ))}
       </div>
     </div>

@@ -18,3 +18,20 @@ export interface Routine {
   createdAt: string;
   programId: string;
 }
+
+export interface RoutineExercise {
+  id: number;
+  routineId: number;
+  exerciseId: number;
+  sets: number;
+  repsMin: number;
+  repsMax: number;
+  order: number;
+  notes: string | null;
+  rir: number | null;
+  restSeconds: number | null;
+}
+
+export interface RoutineDetail extends Routine {
+  routineExercises: RoutineExercise[];
+}

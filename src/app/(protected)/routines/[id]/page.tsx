@@ -1,16 +1,30 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { useParams } from "next/navigation";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { fetchRoutineDetail } from "@/lib/api/routines";
 import { fetchExercises } from "@/lib/api/exercises";
 import { formatDayOfWeek } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { startSession } from "@/lib/api/sessions";
 
 export default function RoutineDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
+
+  const {
+    mutate: handleStart,
+    isPending,
+    error: startError,
+  } = useMutation({
+    mutationFn: () => startSession(Number(params.id)),
+    onSuccess: (session) => {
+      router.push(`/sessions/${session.id}`);
+    },
+  });
 
   const {
     data: routine,
@@ -57,6 +71,20 @@ export default function RoutineDetailPage() {
         </Link>
 
         <h1 className="font-heading text-4xl tracking-wide">{routine.name}</h1>
+
+        <Button
+          onClick={() => handleStart()}
+          disabled={isPending}
+          className="w-full cursor-pointer"
+          size="lg"
+        >
+          {isPending ? "Iniciando..." : "Comenzar rutina"}
+        </Button>
+        {startError && (
+          <p className="text-sm text-destructive">
+            No se pudo iniciar la sesión. Intenta de nuevo.
+          </p>
+        )}
 
         {routine.routineExercises
           .sort((a, b) => a.order - b.order)

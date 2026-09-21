@@ -3,7 +3,7 @@
 import { createSet, updateSet } from "@/lib/api/sessions";
 import { PreviousSetValues, WorkoutSet } from "@/lib/types/sessions";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Check } from "lucide-react";
@@ -11,6 +11,7 @@ import { Check } from "lucide-react";
 interface DraftRow {
   weight: string;
   reps: string;
+  rir: string;
 }
 
 export function ExerciseTracker({
@@ -40,17 +41,37 @@ export function ExerciseTracker({
       initial[i] = {
         weight: prev?.weight?.toString() ?? "",
         reps: prev?.reps?.toString() ?? "",
+        rir: prev?.reps?.toString() ?? "",
       };
     }
 
     return initial;
   });
 
-  const {
-    mutate: toggleSet,
-    isPending,
-    error: confirmError,
-  } = useMutation({
+  useEffect(() => {
+    if (previousValues.length === 0) return;
+
+    setDrafts((current) => {
+      const updated = { ...current };
+      for (let i = 0; i < targetSets; i++) {
+        const alreadyEdited =
+          current[i]?.weight || current[i]?.reps || current[i]?.rir;
+        if (alreadyEdited) continue;
+
+        const prev = previousValues[i];
+        updated[i] = {
+          weight: prev?.weight?.toString() ?? "",
+          reps: prev?.reps?.toString() ?? "",
+          rir: prev?.rir?.toString() ?? "",
+        };
+      }
+      return updated;
+    });
+  }, [previousValues, targetSets]);
+
+  const [pendingRows, setPendingRows] = useState<Set<number>>(new Set());
+
+  const { mutate: toggleSet, error: confirmError } = useMutation({
     mutationFn: async ({
       rowIndex,
       existingSetId,
@@ -58,6 +79,8 @@ export function ExerciseTracker({
       rowIndex: number;
       existingSetId?: number;
     }) => {
+      setPendingRows((prev) => new Set(prev).add(rowIndex));
+
       if (existingSetId) {
         const current = existingSets.find((s) => s.id === existingSetId);
         const newCompletedState = !current?.isCompleted;
@@ -70,6 +93,7 @@ export function ExerciseTracker({
               [rowIndex]: {
                 weight: current.weight?.toString() ?? "",
                 reps: current.reps?.toString() ?? "",
+                rir: current.rir?.toString() ?? "",
               },
             }));
           }
@@ -77,25 +101,31 @@ export function ExerciseTracker({
         }
 
         // Volver a marcar: manda lo que esté en el draft AHORA (puede haber cambiado)
-        const draft = drafts[rowIndex] ?? { weight: "", reps: "" };
+        const draft = drafts[rowIndex] ?? { weight: "", reps: "", rir: "" };
         return updateSet(sessionId, existingSetId, {
           weight: draft.weight ? Number(draft.weight) : null,
           reps: Number(draft.reps),
+          rir: draft.rir ? Number(draft.rir) : null,
           isCompleted: true,
         });
       }
 
-      const draft = drafts[rowIndex] ?? { weight: "", reps: "" };
+      const draft = drafts[rowIndex] ?? { weight: "", reps: "", rir: "" };
       const created = await createSet(sessionId, {
         exerciseId,
         weight: draft.weight ? Number(draft.weight) : null,
         reps: Number(draft.reps),
-        rir: null,
+        rir: draft.rir ? Number(draft.rir) : null,
       });
 
       return updateSet(sessionId, created.id, { isCompleted: true });
     },
-    onSuccess: () => {
+    onSettled: (_data, _error, variables) => {
+      setPendingRows((prev) => {
+        const next = new Set(prev);
+        next.delete(variables.rowIndex);
+        return next;
+      });
       queryClient.invalidateQueries({
         queryKey: ["session", String(sessionId)],
       });
@@ -121,6 +151,7 @@ export function ExerciseTracker({
             <th className="text-left font-normal py-2 px-3">ANTERIOR</th>
             <th className="text-left font-normal py-2 px-3 w-24">KG</th>
             <th className="text-left font-normal py-2 px-3 w-20">REPS</th>
+            <th className="text-left font-normal py-2 px-3 w-20">RIR</th>
             <th className="text-center font-normal py-2 px-3 w-14">✓</th>
           </tr>
         </thead>
@@ -129,11 +160,16 @@ export function ExerciseTracker({
             const existing = existingSets[i];
             const prev = previousValues[i];
             const isConfirmed = Boolean(existing?.isCompleted);
-
             return (
               <tr
                 key={i}
-                className={i % 2 === 1 ? "bg-muted dark:bg-muted/40" : ""}
+                className={
+                  isConfirmed
+                    ? "bg-primary/10"
+                    : i % 2 === 1
+                      ? "bg-muted dark:bg-muted/40"
+                      : ""
+                }
               >
                 <td className="py-2.5 px-3 font-heading text-lg text-primary">
                   {i + 1}
@@ -152,6 +188,7 @@ export function ExerciseTracker({
                     disabled={isConfirmed}
                     onChange={(e) => updateDraft(i, "weight", e.target.value)}
                     className="h-9"
+                    min={0}
                   />
                 </td>
                 <td className="py-2 px-3">
@@ -165,6 +202,21 @@ export function ExerciseTracker({
                     disabled={isConfirmed}
                     onChange={(e) => updateDraft(i, "reps", e.target.value)}
                     className="h-9"
+                    min={0}
+                  />
+                </td>
+                <td className="py-2 px-3">
+                  <Input
+                    type="number"
+                    value={
+                      isConfirmed
+                        ? (existing.rir ?? "")
+                        : (drafts[i]?.rir ?? "")
+                    }
+                    disabled={isConfirmed}
+                    onChange={(e) => updateDraft(i, "rir", e.target.value)}
+                    className="h-9"
+                    min={0}
                   />
                 </td>
                 <td className="py-2 px-3 text-center">
@@ -172,7 +224,7 @@ export function ExerciseTracker({
                     onClick={() =>
                       toggleSet({ rowIndex: i, existingSetId: existing?.id })
                     }
-                    disabled={isPending}
+                    disabled={pendingRows.has(i)}
                     className={`h-8 w-8 rounded-md inline-flex items-center justify-center transition-colors duration-200 ${
                       isConfirmed
                         ? "bg-primary text-primary-foreground"

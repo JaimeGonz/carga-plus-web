@@ -51,7 +51,12 @@ export async function createSet(
 export async function updateSet(
   sessionId: number,
   setId: number,
-  data: { weight?: number | null; reps?: number; isCompleted?: boolean },
+  data: {
+    weight?: number | null;
+    reps?: number;
+    rir?: number | null;
+    isCompleted?: boolean;
+  },
 ): Promise<WorkoutSet> {
   const res = await fetch(`/api/workout-sessions/${sessionId}/sets/${setId}`, {
     method: "PATCH",
@@ -60,5 +65,15 @@ export async function updateSet(
   });
 
   if (!res.ok) throw new Error("Error al confirmar el set");
+  return res.json();
+}
+
+export async function finishSession(
+  sessionId: number,
+): Promise<WorkoutSession> {
+  const res = await fetch(`/api/workout-sessions/${sessionId}`, {
+    method: "PATCH",
+  });
+  if (!res.ok) throw new Error("Error al finalizar la sesión");
   return res.json();
 }

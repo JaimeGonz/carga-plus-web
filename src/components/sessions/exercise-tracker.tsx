@@ -3,7 +3,7 @@
 import { createSet, updateSet } from "@/lib/api/sessions";
 import { PreviousSetValues, WorkoutSet } from "@/lib/types/sessions";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Check } from "lucide-react";
@@ -33,41 +33,17 @@ export function ExerciseTracker({
   const [extraRows, setExtraRows] = useState(0);
   const totalRows = Math.max(targetSets, existingSets.length) + extraRows;
 
-  const [drafts, setDrafts] = useState<Record<number, DraftRow>>(() => {
-    const initial: Record<number, DraftRow> = {};
+  const [drafts, setDrafts] = useState<Record<number, Partial<DraftRow>>>({});
 
-    for (let i = 0; i < targetSets; i++) {
-      const prev = previousValues[i];
-      initial[i] = {
-        weight: prev?.weight?.toString() ?? "",
-        reps: prev?.reps?.toString() ?? "",
-        rir: prev?.reps?.toString() ?? "",
-      };
-    }
+  function getFieldValue(rowIndex: number, field: keyof DraftRow): string {
+    const edited = drafts[rowIndex]?.[field];
+    if (edited !== undefined) return edited; // el usuario ya escribió algo aquí
 
-    return initial;
-  });
-
-  useEffect(() => {
-    if (previousValues.length === 0) return;
-
-    setDrafts((current) => {
-      const updated = { ...current };
-      for (let i = 0; i < targetSets; i++) {
-        const alreadyEdited =
-          current[i]?.weight || current[i]?.reps || current[i]?.rir;
-        if (alreadyEdited) continue;
-
-        const prev = previousValues[i];
-        updated[i] = {
-          weight: prev?.weight?.toString() ?? "",
-          reps: prev?.reps?.toString() ?? "",
-          rir: prev?.rir?.toString() ?? "",
-        };
-      }
-      return updated;
-    });
-  }, [previousValues, targetSets]);
+    const prev = previousValues[rowIndex];
+    if (field === "weight") return prev?.weight?.toString() ?? "";
+    if (field === "reps") return prev?.reps?.toString() ?? "";
+    return prev?.rir?.toString() ?? "";
+  }
 
   const [pendingRows, setPendingRows] = useState<Set<number>>(new Set());
 
@@ -80,6 +56,10 @@ export function ExerciseTracker({
       existingSetId?: number;
     }) => {
       setPendingRows((prev) => new Set(prev).add(rowIndex));
+
+      const weightValue = getFieldValue(rowIndex, "weight");
+      const repsValue = getFieldValue(rowIndex, "reps");
+      const rirValue = getFieldValue(rowIndex, "rir");
 
       if (existingSetId) {
         const current = existingSets.find((s) => s.id === existingSetId);
@@ -101,21 +81,19 @@ export function ExerciseTracker({
         }
 
         // Volver a marcar: manda lo que esté en el draft AHORA (puede haber cambiado)
-        const draft = drafts[rowIndex] ?? { weight: "", reps: "", rir: "" };
         return updateSet(sessionId, existingSetId, {
-          weight: draft.weight ? Number(draft.weight) : null,
-          reps: Number(draft.reps),
-          rir: draft.rir ? Number(draft.rir) : null,
+          weight: weightValue ? Number(weightValue) : null,
+          reps: Number(repsValue),
+          rir: rirValue ? Number(rirValue) : null,
           isCompleted: true,
         });
       }
 
-      const draft = drafts[rowIndex] ?? { weight: "", reps: "", rir: "" };
       const created = await createSet(sessionId, {
         exerciseId,
-        weight: draft.weight ? Number(draft.weight) : null,
-        reps: Number(draft.reps),
-        rir: draft.rir ? Number(draft.rir) : null,
+        weight: weightValue ? Number(weightValue) : null,
+        reps: Number(repsValue),
+        rir: rirValue ? Number(rirValue) : null,
       });
 
       return updateSet(sessionId, created.id, { isCompleted: true });
@@ -183,7 +161,7 @@ export function ExerciseTracker({
                     value={
                       isConfirmed
                         ? (existing.weight ?? "")
-                        : (drafts[i]?.weight ?? "")
+                        : getFieldValue(i, "weight")
                     }
                     disabled={isConfirmed}
                     onChange={(e) => updateDraft(i, "weight", e.target.value)}
@@ -197,7 +175,7 @@ export function ExerciseTracker({
                     value={
                       isConfirmed
                         ? (existing.reps ?? "")
-                        : (drafts[i]?.reps ?? "")
+                        : getFieldValue(i, "reps")
                     }
                     disabled={isConfirmed}
                     onChange={(e) => updateDraft(i, "reps", e.target.value)}
@@ -211,7 +189,7 @@ export function ExerciseTracker({
                     value={
                       isConfirmed
                         ? (existing.rir ?? "")
-                        : (drafts[i]?.rir ?? "")
+                        : getFieldValue(i, "rir")
                     }
                     disabled={isConfirmed}
                     onChange={(e) => updateDraft(i, "rir", e.target.value)}

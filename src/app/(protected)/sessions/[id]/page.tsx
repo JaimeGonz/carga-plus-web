@@ -1,6 +1,7 @@
 "use client";
 
 import { ExerciseTracker } from "@/components/sessions/exercise-tracker";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { fetchExercises } from "@/lib/api/exercises";
 import { fetchRoutineDetail } from "@/lib/api/routines";
@@ -9,18 +10,14 @@ import {
   fetchSessionDetail,
   finishSession,
 } from "@/lib/api/sessions";
-import {
-  useMutation,
-  useQueries,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
+import { AlertCircle } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export default function SessionPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
-  const queryClient = useQueryClient();
 
   const {
     data: session,
@@ -57,7 +54,10 @@ export default function SessionPage() {
     error: finishError,
   } = useMutation({
     mutationFn: () => finishSession(session!.id),
-    onSuccess: () => router.push("/routines"),
+    onSuccess: () => {
+      toast.success("Entrenamiento finalizado");
+      router.push("/routines");
+    },
   });
 
   const exerciseName = (id: number) =>
@@ -69,13 +69,19 @@ export default function SessionPage() {
     );
   if (sessionError)
     return (
-      <p className="p-6 text-sm text-destructive">
-        Error al cargar la sesión.{" "}
-      </p>
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error al cargar la sesión</AlertTitle>
+        <AlertDescription>Intenta recargar la página.</AlertDescription>
+      </Alert>
     );
   if (routineError)
     return (
-      <p className="p-6 text-sm text-destructive">Error al cargar la rutina.</p>
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error al cargar la rutina</AlertTitle>
+        <AlertDescription>Intenta recargar la página.</AlertDescription>
+      </Alert>
     );
 
   if (!session) return null;
@@ -93,9 +99,11 @@ export default function SessionPage() {
         </Button>
 
         {finishError && (
-          <p className="text-sm text-destructive">
-            No se pudo finalizar la sesión.
-          </p>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>No se pudo finalizar la sesión</AlertTitle>
+            <AlertDescription>Intenta de nuevo.</AlertDescription>
+          </Alert>
         )}
       </div>
       {routine?.routineExercises

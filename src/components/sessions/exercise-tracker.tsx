@@ -6,7 +6,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Check } from "lucide-react";
+import { AlertCircle, Check } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface DraftRow {
   weight: string;
@@ -34,12 +35,13 @@ export function ExerciseTracker({
   const totalRows = Math.max(targetSets, existingSets.length) + extraRows;
 
   const [drafts, setDrafts] = useState<Record<number, Partial<DraftRow>>>({});
+  const [pulseRowIndex, setPulseRowIndex] = useState<number | null>(null);
 
   function getFieldValue(rowIndex: number, field: keyof DraftRow): string {
     const edited = drafts[rowIndex]?.[field];
     if (edited !== undefined) return edited; // el usuario ya escribió algo aquí
 
-    const prev = previousValues[rowIndex];
+    const prev = previousValues.find((p) => p.order === rowIndex + 1);
     if (field === "weight") return prev?.weight?.toString() ?? "";
     if (field === "reps") return prev?.reps?.toString() ?? "";
     return prev?.rir?.toString() ?? "";
@@ -98,6 +100,11 @@ export function ExerciseTracker({
 
       return updateSet(sessionId, created.id, { isCompleted: true });
     },
+    onSuccess: (result, variables) => {
+      if (result.isCompleted) {
+        setPulseRowIndex(variables.rowIndex);
+      }
+    },
     onSettled: (_data, _error, variables) => {
       setPendingRows((prev) => {
         const next = new Set(prev);
@@ -135,19 +142,22 @@ export function ExerciseTracker({
         </thead>
         <tbody>
           {Array.from({ length: totalRows }, (_, i) => i).map((i) => {
-            const existing = existingSets[i];
+            const existing = existingSets.find((s) => s.order === i + 1);
             const prev = previousValues[i];
             const isConfirmed = Boolean(existing?.isCompleted);
             return (
               <tr
                 key={i}
-                className={
+                onAnimationEnd={() => {
+                  if (pulseRowIndex === i) setPulseRowIndex(null);
+                }}
+                className={`${
                   isConfirmed
                     ? "bg-primary/10"
                     : i % 2 === 1
                       ? "bg-muted dark:bg-muted/40"
                       : ""
-                }
+                } ${pulseRowIndex === i ? "animate-row-pulse" : ""}`}
               >
                 <td className="py-2.5 px-3 font-heading text-lg text-primary">
                   {i + 1}
@@ -159,7 +169,7 @@ export function ExerciseTracker({
                   <Input
                     type="number"
                     value={
-                      isConfirmed
+                      existing?.isCompleted
                         ? (existing.weight ?? "")
                         : getFieldValue(i, "weight")
                     }
@@ -173,7 +183,7 @@ export function ExerciseTracker({
                   <Input
                     type="number"
                     value={
-                      isConfirmed
+                      existing?.isCompleted
                         ? (existing.reps ?? "")
                         : getFieldValue(i, "reps")
                     }
@@ -187,7 +197,7 @@ export function ExerciseTracker({
                   <Input
                     type="number"
                     value={
-                      isConfirmed
+                      existing?.isCompleted
                         ? (existing.rir ?? "")
                         : getFieldValue(i, "rir")
                     }
@@ -218,9 +228,11 @@ export function ExerciseTracker({
         </tbody>
       </table>
       {confirmError && (
-        <p className="px-4 pb-3 text-xs text-destructive">
-          No se pudo guardar el set. Intente de nuevo.
-        </p>
+        <Alert variant="destructive" className="mx-4 mb-3 w-auto">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>No se pudo guardar la serie</AlertTitle>
+          <AlertDescription>Intenta de nuevo.</AlertDescription>
+        </Alert>
       )}
       <button
         onClick={() => setExtraRows((n) => n + 1)}

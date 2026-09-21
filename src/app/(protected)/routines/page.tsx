@@ -4,7 +4,8 @@ import { useQuery } from "@tanstack/react-query";
 import Link from "next/link";
 import { fetchRoutines } from "@/lib/api/routines";
 import { formatDayOfWeek } from "@/lib/format";
-import { ChevronRight } from "lucide-react";
+import { AlertCircle, ChevronRight } from "lucide-react";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 export default function RoutinesPage() {
   const {
@@ -29,7 +30,11 @@ export default function RoutinesPage() {
         <p className="text-sm text-muted-foreground">Cargando rutinas...</p>
       )}
       {error && (
-        <p className="text-sm text-destructive">Error al cargar rutinas.</p>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Error al cargar rutinas</AlertTitle>
+          <AlertDescription>Intenta recargar la página.</AlertDescription>
+        </Alert>
       )}
       {routines?.length === 0 && (
         <p className="text-sm text-muted-foreground">Aún no tienes rutinas.</p>

@@ -7,9 +7,11 @@ import { fetchRoutineDetail } from "@/lib/api/routines";
 import { fetchExercises } from "@/lib/api/exercises";
 import { formatDayOfWeek } from "@/lib/format";
 import { Card } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
+import { AlertCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { startSession } from "@/lib/api/sessions";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { toast } from "sonner";
 
 export default function RoutineDetailPage() {
   const params = useParams<{ id: string }>();
@@ -22,6 +24,7 @@ export default function RoutineDetailPage() {
   } = useMutation({
     mutationFn: () => startSession(Number(params.id)),
     onSuccess: (session) => {
+      toast.success("Sesión iniciada");
       router.push(`/sessions/${session.id}`);
     },
   });
@@ -50,7 +53,11 @@ export default function RoutineDetailPage() {
     );
   if (error)
     return (
-      <p className="p-6 text-sm text-destructive">Error al cargar la rutina.</p>
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error al cargar la rutina</AlertTitle>
+        <AlertDescription>Intenta recargar la página.</AlertDescription>
+      </Alert>
     );
   if (!routine) return null;
 
@@ -81,9 +88,11 @@ export default function RoutineDetailPage() {
           {isPending ? "Iniciando..." : "Comenzar rutina"}
         </Button>
         {startError && (
-          <p className="text-sm text-destructive">
-            No se pudo iniciar la sesión. Intenta de nuevo.
-          </p>
+          <Alert variant="destructive">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>No se pudo iniciar la sesión</AlertTitle>
+            <AlertDescription>Intenta de nuevo.</AlertDescription>
+          </Alert>
         )}
 
         {routine.routineExercises

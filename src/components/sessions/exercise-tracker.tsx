@@ -1,12 +1,11 @@
-"use-client";
+"use client";
 
 import { createSet, updateSet } from "@/lib/api/sessions";
 import { PreviousSetValues, WorkoutSet } from "@/lib/types/sessions";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { AlertCircle, Check } from "lucide-react";
+import { AlertCircle, Check, Plus, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface DraftRow {
@@ -36,6 +35,10 @@ export function ExerciseTracker({
 
   const [drafts, setDrafts] = useState<Record<number, Partial<DraftRow>>>({});
   const [pulseRowIndex, setPulseRowIndex] = useState<number | null>(null);
+
+  function isFieldEdited(rowIndex: number, field: keyof DraftRow): boolean {
+    return drafts[rowIndex]?.[field] !== undefined;
+  }
 
   function getFieldValue(rowIndex: number, field: keyof DraftRow): string {
     const edited = drafts[rowIndex]?.[field];
@@ -125,25 +128,23 @@ export function ExerciseTracker({
   }
 
   return (
-    <Card className="overflow-hidden py-0 gap-0">
-      <div className="p-4 pb-3">
-        <p className="font-heading text-lg tracking-wide">{exerciseName}</p>
-      </div>
-      <table className="w-full text-base">
+    <div className="border-b border-border pb-4">
+      <p className="font-heading text-lg tracking-wider mb-2">{exerciseName}</p>
+      <table className="w-full text-base table-fixed">
         <thead>
-          <tr className="text-xs text-muted-foreground border-t border-border">
-            <th className="text-left font-normal py-2 px-3 w-14">SERIE</th>
-            <th className="text-left font-normal py-2 px-3">ANTERIOR</th>
-            <th className="text-left font-normal py-2 px-3 w-24">KG</th>
-            <th className="text-left font-normal py-2 px-3 w-20">REPS</th>
-            <th className="text-left font-normal py-2 px-3 w-20">RIR</th>
-            <th className="text-center font-normal py-2 px-3 w-14">✓</th>
+          <tr className="text-xs text-muted-foreground">
+            <th className="text-center font-normal py-2 px-1 w-10">#</th>
+            <th className="text-left font-normal py-2 px-1">ANTERIOR</th>
+            <th className="text-center font-normal py-2 px-1 w-16">KG</th>
+            <th className="text-center font-normal py-2 px-1 w-14">REPS</th>
+            <th className="text-center font-normal py-2 px-1 w-14">RIR</th>
+            <th className="text-center font-normal py-2 px-1 w-12">✓</th>
           </tr>
         </thead>
         <tbody>
           {Array.from({ length: totalRows }, (_, i) => i).map((i) => {
             const existing = existingSets.find((s) => s.order === i + 1);
-            const prev = previousValues[i];
+            const prev = previousValues.find((p) => p.order === i + 1);
             const isConfirmed = Boolean(existing?.isCompleted);
             return (
               <tr
@@ -159,67 +160,78 @@ export function ExerciseTracker({
                       : ""
                 } ${pulseRowIndex === i ? "animate-row-pulse" : ""}`}
               >
-                <td className="py-2.5 px-3 font-heading text-lg text-primary">
+                <td className="py-2 px-1 text-center font-heading text-lg text-primary">
                   {i + 1}
                 </td>
-                <td className="py-2.5 px-3 text-xs text-muted-foreground">
+                <td className="py-2 px-1 text-xs text-muted-foreground truncate">
                   {prev ? `${prev.weight ?? "-"}kg x ${prev.reps}` : "—"}
                 </td>
-                <td className="py-2 px-3">
-                  <Input
-                    type="number"
-                    value={
-                      existing?.isCompleted
-                        ? (existing.weight ?? "")
-                        : getFieldValue(i, "weight")
-                    }
-                    disabled={isConfirmed}
-                    onChange={(e) => updateDraft(i, "weight", e.target.value)}
-                    className="h-9"
-                    min={0}
-                  />
+                {/* KG */}
+                <td className="py-2.5 px-1">
+                  {existing?.isCompleted ? (
+                    <p className="text-center font-medium">
+                      {existing.weight ?? "-"}
+                    </p>
+                  ) : (
+                    <Input
+                      type="number"
+                      value={getFieldValue(i, "weight")}
+                      onChange={(e) => updateDraft(i, "weight", e.target.value)}
+                      className={`h-9 text-center px-1 ${!isFieldEdited(i, "weight") ? "text-muted-foreground" : ""}`}
+                      min={0}
+                    />
+                  )}
                 </td>
-                <td className="py-2 px-3">
-                  <Input
-                    type="number"
-                    value={
-                      existing?.isCompleted
-                        ? (existing.reps ?? "")
-                        : getFieldValue(i, "reps")
-                    }
-                    disabled={isConfirmed}
-                    onChange={(e) => updateDraft(i, "reps", e.target.value)}
-                    className="h-9"
-                    min={0}
-                  />
+
+                {/* REPS */}
+                <td className="py-2.5 px-1">
+                  {existing?.isCompleted ? (
+                    <p className="text-center font-medium">
+                      {existing.reps ?? "-"}
+                    </p>
+                  ) : (
+                    <Input
+                      type="number"
+                      value={getFieldValue(i, "reps")}
+                      onChange={(e) => updateDraft(i, "reps", e.target.value)}
+                      className={`h-9 text-center px-1 ${!isFieldEdited(i, "reps") ? "text-muted-foreground" : ""}`}
+                      min={0}
+                    />
+                  )}
                 </td>
-                <td className="py-2 px-3">
-                  <Input
-                    type="number"
-                    value={
-                      existing?.isCompleted
-                        ? (existing.rir ?? "")
-                        : getFieldValue(i, "rir")
-                    }
-                    disabled={isConfirmed}
-                    onChange={(e) => updateDraft(i, "rir", e.target.value)}
-                    className="h-9"
-                    min={0}
-                  />
+
+                {/* RIR */}
+                <td className="py-2.5 px-1">
+                  {existing?.isCompleted ? (
+                    <p className="text-center font-medium">
+                      {existing.rir ?? "-"}
+                    </p>
+                  ) : (
+                    <Input
+                      type="number"
+                      value={getFieldValue(i, "rir")}
+                      onChange={(e) => updateDraft(i, "rir", e.target.value)}
+                      className={`h-9 text-center px-1 ${
+                        !isFieldEdited(i, "rir") ? "text-muted-foreground" : ""
+                      }`}
+                      min={0}
+                      max={5} // valores mayores no aportan info útil de esfuerzo real, ya son series lejos del fallo
+                    />
+                  )}
                 </td>
-                <td className="py-2 px-3 text-center">
+                <td className="py-2.5 px-1 text-center">
                   <button
                     onClick={() =>
                       toggleSet({ rowIndex: i, existingSetId: existing?.id })
                     }
                     disabled={pendingRows.has(i)}
-                    className={`h-8 w-8 rounded-md inline-flex items-center justify-center transition-colors duration-200 ${
+                    className={`h-10 w-10 rounded-md inline-flex items-center justify-center transition-colors duration-200 ${
                       isConfirmed
                         ? "bg-primary text-primary-foreground"
-                        : "bg-muted"
+                        : "border border-border text-muted-foreground bg-transparent"
                     }`}
                   >
-                    <Check className="h-4 w-4" />
+                    <Check className="h-5 w-5" />
                   </button>
                 </td>
               </tr>
@@ -234,12 +246,24 @@ export function ExerciseTracker({
           <AlertDescription>Intenta de nuevo.</AlertDescription>
         </Alert>
       )}
+
+      {extraRows > 0 && (
+        <button
+          onClick={() => setExtraRows((n) => n - 1)}
+          className="w-full py-2 flex items-center justify-center gap-1.5 text-xs text-destructive/70 hover:text-destructive transition-colors duration-200 cursor-pointer"
+        >
+          <X className="h-3.5 w-3.5" />
+          Deshacer última serie agregada
+        </button>
+      )}
+
       <button
         onClick={() => setExtraRows((n) => n + 1)}
-        className="w-full py-3 text-sm text-muted-foreground hover:text-foreground transition-colors duration-200 border-t border-border cursor-pointer"
+        className="w-full py-2 mt-3 flex items-center justify-center gap-2 rounded-lg bg-muted hover:bg-muted/70 text-sm font-medium transition-colors duration-200 cursor-pointer"
       >
-        + Agregar Serie
+        <Plus className="h-4 w-4" />
+        Agregar Serie
       </button>
-    </Card>
+    </div>
   );
 }

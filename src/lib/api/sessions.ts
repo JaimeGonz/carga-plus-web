@@ -77,3 +77,14 @@ export async function finishSession(
   if (!res.ok) throw new Error("Error al finalizar la sesión");
   return res.json();
 }
+
+export async function deleteSet(
+  sessionId: number,
+  setId: number,
+): Promise<void> {
+  const res = await fetch(`/api/workout-sessions/${sessionId}/sets/${setId}`, {
+    method: "DELETE",
+  });
+
+  if (!res.ok) throw new Error("Error al eliminar el set");
+}

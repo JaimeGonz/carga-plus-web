@@ -30,3 +30,29 @@ export async function PATCH(
 
   return NextResponse.json(await backendRes.json());
 }
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string; setId: string }> },
+) {
+  const { id, setId } = await params;
+  const token = request.cookies.get("access_token")?.value;
+  if (!token) {
+    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  }
+
+  const backendRes = await backendFetch(
+    `/workout-sessins/${id}/sets/${setId}`,
+    {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
+
+  if (!backendRes.ok) {
+    const error = await backendRes.json();
+    return NextResponse.json(error, { status: backendRes.status });
+  }
+
+  return NextResponse.json({ success: true });
+}

@@ -23,9 +23,11 @@ const RIR_DESCRIPTIONS: Record<number, { label: string; detail: string }> = {
 export function RirSelector({
   value,
   onChange,
+  isEdited,
 }: {
   value: number | null;
   onChange: (value: number) => void;
+  isEdited: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const displayValue = value ?? 2;
@@ -45,11 +47,7 @@ export function RirSelector({
       title="Registrar RIR de la serie"
       trigger={
         <button className="h-9 w-full rounded-md border border-input bg-background hover:bg-muted transition-colors duration-200 flex items-center justify-center gap-1 text-sm font-medium">
-          <span
-            className={
-              value !== null ? "text-primary" : "text-muted-foreground"
-            }
-          >
+          <span className={isEdited ? "text-primary" : "text-muted-foreground"}>
             {value ?? "RIR"}
           </span>
           <SlidersHorizontal className="h-3 w-3 text-muted-foreground" />

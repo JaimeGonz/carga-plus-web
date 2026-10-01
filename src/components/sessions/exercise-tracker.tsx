@@ -273,6 +273,7 @@ export function ExerciseTracker({
                           : null
                       }
                       onChange={(v) => updateDraft(i, "rir", v.toString())}
+                      isEdited={isFieldEdited(i, "rir")}
                     />
                   )}
                 </td>

@@ -9,6 +9,7 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
+/docs/ideas-v2.md
 
 # testing
 /coverage

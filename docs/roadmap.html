@@ -1,0 +1,822 @@
+<div id="app-root"></div>
+<style>
+  #app-root {
+    --bg: #14171c;
+    --bg-card: #1b1f26;
+    --bg-card-hover: #202530;
+    --border: #2a2f3a;
+    --text: #e8eaed;
+    --text-dim: #8b93a1;
+    --amber: #f0a63a;
+    --amber-dim: #f0a63a33;
+    --green: #4ade80;
+    --green-dim: #4ade8022;
+    --purple: #a78bfa;
+    --teal: #2dd4bf;
+    --teal-dim: #2dd4bf2a;
+    --blue: #5b9dd9;
+    --rest: #3a3f4a;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 0;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  #app-root * { box-sizing: border-box; }
+
+  .header {
+    padding: 28px 24px 22px;
+    background: linear-gradient(135deg, #1b1f26 0%, #14171c 100%);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .header-eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--amber);
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+
+  .header-title {
+    font-size: 26px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    margin: 0 0 4px;
+  }
+
+  .header-sub {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin: 0 0 20px;
+  }
+
+  .progress-block {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .progress-track {
+    flex: 1;
+    height: 10px;
+    background: #0f1216;
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--amber), #f7c873);
+    border-radius: 999px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+
+  .progress-label {
+    font-family: "SF Mono", "Roboto Mono", Consolas, monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--amber);
+    white-space: nowrap;
+    min-width: 64px;
+    text-align: right;
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+  }
+
+  .stat-chip {
+    background: #0f1216;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: var(--text-dim);
+  }
+
+  .stat-chip b {
+    color: var(--text);
+    font-family: "SF Mono", "Roboto Mono", Consolas, monospace;
+  }
+
+  .body-scroll {
+    padding: 20px;
+    max-height: 640px;
+    overflow-y: auto;
+  }
+
+  .phase-divider {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 26px 0 14px;
+  }
+
+  .phase-divider:first-child { margin-top: 0; }
+
+  .phase-divider .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--amber);
+    flex-shrink: 0;
+  }
+
+  .phase-divider.portfolio .dot { background: var(--purple); }
+  .phase-divider.program .dot { background: var(--teal); }
+
+  .phase-divider .line {
+    height: 1px;
+    background: var(--border);
+    flex: 1;
+  }
+
+  .phase-divider .label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .week-block {
+    margin-bottom: 18px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--bg-card);
+  }
+
+  .week-block.portfolio { border-color: #a78bfa44; }
+  .week-block.program { border-color: #2dd4bf44; }
+
+  .week-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 13px 16px;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .week-head:hover { background: var(--bg-card-hover); }
+
+  .week-head-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .week-num {
+    font-family: "SF Mono", "Roboto Mono", Consolas, monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--amber);
+    background: var(--amber-dim);
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+
+  .week-title {
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .week-dates {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: "SF Mono", "Roboto Mono", Consolas, monospace;
+  }
+
+  .week-progress-mini {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-family: "SF Mono", "Roboto Mono", Consolas, monospace;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .chevron {
+    transition: transform 0.2s ease;
+    color: var(--text-dim);
+    font-size: 12px;
+  }
+
+  .chevron.open { transform: rotate(90deg); }
+
+  .week-days {
+    border-top: 1px solid var(--border);
+  }
+
+  .day-row {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .day-row:last-child { border-bottom: none; }
+
+  .day-row.rest {
+    padding: 10px 16px;
+    opacity: 0.55;
+  }
+
+  .day-head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 9px;
+  }
+
+  .day-row.rest .day-head { margin-bottom: 0; }
+
+  .day-date {
+    font-family: "SF Mono", "Roboto Mono", Consolas, monospace;
+    font-size: 11px;
+    color: var(--blue);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .day-focus {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text);
+  }
+
+  .rest-tag {
+    font-size: 11px;
+    color: var(--text-dim);
+    font-style: italic;
+  }
+
+  .task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-left: 2px;
+  }
+
+  .task-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    cursor: pointer;
+    padding: 5px 6px;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+  }
+
+  .task-item:hover { background: #ffffff08; }
+
+  .checkbox {
+    width: 17px;
+    height: 17px;
+    border-radius: 5px;
+    border: 1.5px solid var(--rest);
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+  }
+
+  .checkbox.checked {
+    background: var(--green);
+    border-color: var(--green);
+  }
+
+  .checkbox svg { display: none; width: 11px; height: 11px; }
+  .checkbox.checked svg { display: block; }
+
+  .task-text {
+    font-size: 12.5px;
+    line-height: 1.4;
+    color: var(--text);
+  }
+
+  .task-text.checked {
+    color: var(--text-dim);
+    text-decoration: line-through;
+  }
+
+  .day-row.complete {
+    background: var(--green-dim);
+    margin: 0 -16px;
+    padding: 14px 16px;
+    border-radius: 8px;
+  }
+
+  .footer-note {
+    padding: 16px 24px 22px;
+    border-top: 1px solid var(--border);
+    font-size: 11.5px;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+
+  .reset-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-size: 11px;
+    padding: 6px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  .reset-btn:hover { border-color: #e05c5c; color: #e05c5c; }
+
+  .loading-state {
+    padding: 60px 20px;
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 13px;
+  }
+</style>
+
+<script>
+(function () {
+  const STORAGE_KEY = "carga-plus-roadmap-progress";
+
+  // IMPORTANT: "FASE 1 — BACKEND" content/order below is UNCHANGED from
+  // previous versions so that already-saved progress (keyed by array
+  // position) stays correctly mapped. New phases are inserted AFTER it,
+  // in phases that were not yet started, so shifting their ids is safe.
+  const PLAN = [
+    {
+      phase: "FASE 1 — BACKEND",
+      weeks: [
+        {
+          title: "RoutinesModule",
+          dates: "28 Ago — 2 Sep",
+          days: [
+            { date: "Vie 28 Ago", focus: "Setup + DTOs", tasks: [
+              "Generar RoutinesModule (CLI): module, controller, service, repository",
+              "Diseñar create-routine.dto.ts + DTO anidado de ejercicios",
+            ]},
+            { date: "Sáb 29 Ago", focus: "POST /routines (nested write)", tasks: [
+              "Implementar RoutinesRepository.create() con nested write de Prisma",
+              "Conectar controller + service, probar en Postman",
+            ]},
+            { rest: true, date: "Dom 30 Ago" },
+            { date: "Lun 31 Ago", focus: "Lectura de rutinas", tasks: [
+              "GET /routines — listar rutinas del usuario autenticado",
+              "GET /routines/:id — detalle con ejercicios incluidos",
+            ]},
+            { date: "Mar 1 Sep", focus: "Editar y eliminar", tasks: [
+              "PATCH /routines/:id",
+              "DELETE /routines/:id (confirmar cascade en RoutineExercise)",
+            ]},
+            { date: "Mié 2 Sep", focus: "Cierre del módulo", tasks: [
+              "Probar los 5 endpoints end-to-end en Postman",
+              "Commit + push — cerrar RoutinesModule",
+            ]},
+          ]
+        },
+        {
+          title: "WorkoutSessionsModule",
+          dates: "3 — 9 Sep",
+          days: [
+            { date: "Jue 3 Sep", focus: "Setup + DTOs", tasks: [
+              "Diseñar start-session.dto.ts y finish-session.dto.ts",
+              "Generar módulo con Nest CLI",
+            ]},
+            { date: "Vie 4 Sep", focus: "Iniciar y listar sesiones", tasks: [
+              "POST /workout-sessions (iniciar, opcionalmente desde una rutina)",
+              "GET /workout-sessions (listar sesiones del usuario)",
+            ]},
+            { date: "Sáb 5 Sep", focus: "Detalle y cierre de sesión", tasks: [
+              "GET /workout-sessions/:id",
+              "PATCH /workout-sessions/:id (marcar como finalizada)",
+            ]},
+            { rest: true, date: "Dom 6 Sep" },
+            { date: "Lun 7 Sep", focus: "Preparar terreno para Sets", tasks: [
+              "Revisar relación WorkoutSession ↔ WorkoutSet en el schema",
+              "Testing manual del flujo completo de sesión en Postman",
+            ]},
+            { date: "Mar 8 Sep", focus: "Buffer", tasks: [
+              "Resolver bugs pendientes de Sessions",
+              "Repasar código contra lo aprendido de SOLID/Clean Code",
+            ]},
+            { date: "Mié 9 Sep", focus: "Cierre del módulo", tasks: [
+              "Commit + push — cerrar WorkoutSessionsModule",
+            ]},
+          ]
+        },
+        {
+          title: "WorkoutSetsModule + Seeds + Deploy backend",
+          dates: "10 — 16 Sep",
+          days: [
+            { date: "Jue 10 Sep", focus: "Setup + crear sets", tasks: [
+              "DTOs de WorkoutSet (create/update)",
+              "POST /workout-sets — agregar set a una sesión activa",
+            ]},
+            { date: "Vie 11 Sep", focus: "CRUD completo de sets", tasks: [
+              "GET / PATCH / DELETE de workout-sets",
+              "Probar flujo completo: crear sesión → agregar sets → finalizar",
+            ]},
+            { date: "Sáb 12 Sep", focus: "Seeds", tasks: [
+              "Escribir seed de ejercicios base (10-15 ejercicios comunes)",
+              "Seed de 1-2 rutinas de ejemplo",
+            ]},
+            { rest: true, date: "Dom 13 Sep" },
+            { date: "Lun 14 Sep", focus: "Dockerizar", tasks: [
+              "Dockerfile del backend",
+              "docker-compose con Postgres para desarrollo local",
+            ]},
+            { date: "Mar 15 Sep", focus: "Deploy", tasks: [
+              "Deploy a Railway + variables de entorno",
+              "Probar la API completa ya en producción",
+            ]},
+            { date: "Mié 16 Sep", focus: "Cierre de fase backend 🎉", tasks: [
+              "README del backend (setup, endpoints, decisiones técnicas)",
+              "Backend de Carga+ 100% funcional — MVP demoable",
+            ]},
+          ]
+        },
+      ]
+    },
+    {
+      phase: "FASE 1.4 — PROGRAMSMODULE (mejora de diseño)",
+      program: true,
+      weeks: [
+        {
+          title: "Program de 3 estados + adaptar Routine",
+          dates: "2 — 3 Sep",
+          program: true,
+          days: [
+            { date: "Mié 2 Sep", focus: "Diseño del modelo Program", tasks: [
+              "Detectar que weeklyFrequency en Routine no representaba nada real",
+              "Diseñar Program (3 estados: ACTIVE / AVAILABLE / ARCHIVED) inspirado en Hevy",
+              "Agregar dayOfWeek a Routine, quitar isActive y weeklyFrequency",
+              "Agregar enum SetType a WorkoutSet (NORMAL/WARMUP/DROPSET/FAILURE/OTHER)",
+              "Migrar schema y actualizar seed.ts (Program + dayOfWeek en las 5 rutinas)",
+            ]},
+            { date: "Mié 2 Sep (cont.)", focus: "ProgramsModule — CRUD base", tasks: [
+              "CreateProgramDto + UpdateProgramDto",
+              "ProgramsRepository: create, findOne, findAll (con filtro de archivados)",
+              "ProgramsService: reglas de negocio (NotFoundException)",
+              "ProgramsController: POST /programs, GET /programs, GET /programs/:id",
+            ]},
+            { date: "Jue 3 Sep", focus: "Adaptar RoutinesModule a Program", tasks: [
+              "Quitar weeklyFrequency de CreateRoutineDto, agregar dayOfWeek",
+              "RoutinesRepository/Service: recibir programId, verificar contra ProgramsService",
+              "RoutinesController: ruta anidada POST /programs/:programId/routines",
+              "Probar end-to-end en Postman: crear Program → crear Routine dentro",
+            ]},
+            { date: "Pendiente", focus: "Cerrar ProgramsModule por completo", tasks: [
+              "PATCH /programs/:id (editar name/splitType)",
+              "PATCH /programs/:id/activate (desactiva cualquier otro ACTIVE del usuario)",
+              "PATCH /programs/:id/archive (status: ARCHIVED, endDate: now())",
+              "PATCH /programs/:id/unarchive (status: AVAILABLE)",
+              "DELETE /programs/:id (cascade, uso excepcional)",
+            ]},
+          ]
+        },
+      ]
+    },
+    {
+      phase: "FASE 1.5 — SITIO PERSONAL (PORTFOLIO)",
+      portfolio: true,
+      weeks: [
+        {
+          title: "Sprint de portfolio",
+          dates: "17 — 19 Sep",
+          portfolio: true,
+          days: [
+            { date: "Jue 17 Sep", focus: "Planeación + setup", tasks: [
+              "Definir estructura del sitio (hero, proyectos, sobre mí, contacto)",
+              "Setup Next.js + Tailwind, deploy inicial vacío a Vercel",
+            ]},
+            { date: "Vie 18 Sep", focus: "Contenido y proyectos", tasks: [
+              "Sección de proyectos: CargaPlus y notifications-api (reusar contenido de los READMEs)",
+              "Sección 'Sobre mí' + link a CV",
+            ]},
+            { date: "Sáb 19 Sep", focus: "Pulido y publicación 🎉", tasks: [
+              "Revisar responsive/mobile",
+              "Deploy final + actualizar link en GitHub bio, LinkedIn y CV",
+            ]},
+          ]
+        },
+      ]
+    },
+    {
+      phase: "FASE 2 — FRONTEND",
+      weeks: [
+        {
+          title: "Setup + Autenticación",
+          dates: "21 — 27 Sep",
+          days: [
+            { date: "Lun 21 Sep", focus: "Setup del proyecto", tasks: [
+              "Crear proyecto Next.js + Tailwind",
+              "Estructura de carpetas (app/, components/, lib/)",
+            ]},
+            { date: "Mar 22 Sep", focus: "Login", tasks: [
+              "Página de login conectada a POST /auth/login",
+              "Guardar JWT (cookie o storage) tras login exitoso",
+            ]},
+            { date: "Mié 23 Sep", focus: "Registro + rutas protegidas", tasks: [
+              "Página de registro",
+              "Middleware/guard de rutas protegidas en el frontend",
+            ]},
+            { date: "Jue 24 Sep", focus: "Layout base", tasks: [
+              "Navbar/sidebar + botón de logout",
+              "Layout general que envuelve las páginas privadas",
+            ]},
+            { date: "Vie 25 Sep", focus: "Buffer", tasks: [
+              "Pulir manejo de errores de auth (credenciales inválidas, etc.)",
+            ]},
+            { date: "Sáb 26 Sep", focus: "Cierre", tasks: [
+              "Commit + push — Auth del frontend funcionando end-to-end",
+            ]},
+            { rest: true, date: "Dom 27 Sep" },
+          ]
+        },
+        {
+          title: "Rutinas y sesión de entrenamiento",
+          dates: "28 Sep — 4 Oct",
+          days: [
+            { date: "Lun 28 Sep", focus: "Listado de rutinas", tasks: [
+              "Página que consume GET /routines y las muestra en tarjetas",
+            ]},
+            { date: "Mar 29 Sep", focus: "Crear rutina", tasks: [
+              "Formulario de creación con ejercicios anidados (agregar/quitar)",
+            ]},
+            { date: "Mié 30 Sep", focus: "Detalle y edición", tasks: [
+              "Página de detalle de rutina",
+              "Edición de rutina existente",
+            ]},
+            { date: "Jue 1 Oct", focus: "Iniciar sesión", tasks: [
+              "Botón 'Iniciar entrenamiento' desde una rutina",
+              "Pantalla de sesión activa",
+            ]},
+            { date: "Vie 2 Oct", focus: "Registrar sets", tasks: [
+              "UI para agregar sets (peso, reps, RIR) durante la sesión",
+            ]},
+            { date: "Sáb 3 Oct", focus: "Finalizar sesión", tasks: [
+              "Botón de finalizar sesión + guardar",
+              "Confirmar que persiste correctamente en el backend",
+            ]},
+            { rest: true, date: "Dom 4 Oct" },
+          ]
+        },
+        {
+          title: "Dashboard + Deploy + MVP terminado",
+          dates: "5 — 10 Oct",
+          days: [
+            { date: "Lun 5 Oct", focus: "Dashboard básico", tasks: [
+              "Resumen de actividad reciente",
+              "Últimas sesiones registradas",
+            ]},
+            { date: "Mar 6 Oct", focus: "Historial", tasks: [
+              "Listado completo de sesiones pasadas con filtros simples",
+            ]},
+            { date: "Mié 7 Oct", focus: "Pulido visual", tasks: [
+              "Revisar responsive (mobile) en todas las pantallas",
+              "Consistencia de estilos con Tailwind",
+            ]},
+            { date: "Jue 8 Oct", focus: "Deploy frontend", tasks: [
+              "Deploy a Vercel + variables de entorno de producción",
+            ]},
+            { date: "Vie 9 Oct", focus: "Testing end-to-end", tasks: [
+              "Probar flujo completo real: registro → login → crear rutina → sesión → dashboard",
+            ]},
+            { date: "Sáb 10 Oct", focus: "MVP TERMINADO 🎉", tasks: [
+              "README general del proyecto",
+              "Grabar GIF/demo corto para el portafolio",
+              "Carga+ listo para mostrar en entrevistas",
+            ]},
+          ]
+        },
+      ]
+    }
+  ];
+
+  // Flatten and assign stable IDs (position-based, in array order —
+  // Fase 1 Backend ids are unchanged vs. previous roadmap versions)
+  let taskCounter = 0;
+  let dayCounter = 0;
+  PLAN.forEach(phase => {
+    phase.weeks.forEach(week => {
+      week.days.forEach(day => {
+        day.id = "day-" + (dayCounter++);
+        if (!day.rest) {
+          day.taskIds = day.tasks.map(() => "task-" + (taskCounter++));
+        }
+      });
+    });
+  });
+
+  const root = document.getElementById("app-root");
+  let state = {};
+  let openWeeks = new Set();
+  let loaded = false;
+
+  async function loadState() {
+    try {
+      const result = await window.storage.get(STORAGE_KEY, false);
+      state = result && result.value ? JSON.parse(result.value) : {};
+    } catch (e) {
+      state = {};
+    }
+    loaded = true;
+    outer: for (const phase of PLAN) {
+      for (const week of phase.weeks) {
+        for (const day of week.days) {
+          if (day.rest) continue;
+          const allDone = day.taskIds.every(id => state[id]);
+          if (!allDone) {
+            openWeeks.add(phase.phase + "|" + week.title);
+            break outer;
+          }
+        }
+      }
+    }
+    render();
+  }
+
+  async function saveState() {
+    try {
+      await window.storage.set(STORAGE_KEY, JSON.stringify(state), false);
+    } catch (e) {
+      console.error("No se pudo guardar el progreso", e);
+    }
+  }
+
+  function toggleTask(taskId) {
+    state[taskId] = !state[taskId];
+    saveState();
+    render();
+  }
+
+  function toggleWeek(key) {
+    if (openWeeks.has(key)) openWeeks.delete(key);
+    else openWeeks.add(key);
+    render();
+  }
+
+  async function resetProgress() {
+    if (!confirm("¿Seguro que quieres reiniciar todo el progreso del roadmap?")) return;
+    state = {};
+    await saveState();
+    render();
+  }
+
+  function countTasks() {
+    let total = 0, done = 0;
+    PLAN.forEach(phase => phase.weeks.forEach(week => week.days.forEach(day => {
+      if (day.rest) return;
+      day.taskIds.forEach(id => {
+        total++;
+        if (state[id]) done++;
+      });
+    })));
+    return { total, done };
+  }
+
+  function countWeekTasks(week) {
+    let total = 0, done = 0;
+    week.days.forEach(day => {
+      if (day.rest) return;
+      day.taskIds.forEach(id => {
+        total++;
+        if (state[id]) done++;
+      });
+    });
+    return { total, done };
+  }
+
+  function render() {
+    if (!loaded) {
+      root.innerHTML = '<div class="loading-state">Cargando tu progreso…</div>';
+      return;
+    }
+
+    const { total, done } = countTasks();
+    const pct = total ? Math.round((done / total) * 100) : 0;
+
+    let html = `
+      <div class="header">
+        <div class="header-eyebrow">Roadmap de proyecto</div>
+        <div class="header-title">Carga+ — Plan hasta el MVP</div>
+        <div class="header-sub">28 Ago → 10 Oct 2026 · ~3-4 hrs/día · domingos de descanso</div>
+        <div class="progress-block">
+          <div class="progress-track"><div class="progress-fill" style="width:${pct}%"></div></div>
+          <div class="progress-label">${done}/${total}</div>
+        </div>
+        <div class="stats-row">
+          <div class="stat-chip">Backend: <b>Routines → Sessions → Sets → Deploy</b></div>
+          <div class="stat-chip">Programs: <b>3 estados (2-3 sep)</b></div>
+          <div class="stat-chip">Portfolio: <b>sitio personal (17-19 sep)</b></div>
+          <div class="stat-chip">Frontend: <b>Auth → Rutinas → Sesión → Dashboard</b></div>
+        </div>
+      </div>
+      <div class="body-scroll">
+    `;
+
+    PLAN.forEach(phase => {
+      const phaseClass = phase.portfolio ? 'portfolio' : (phase.program ? 'program' : '');
+      html += `
+        <div class="phase-divider ${phaseClass}">
+          <div class="dot"></div>
+          <div class="label">${phase.phase}</div>
+          <div class="line"></div>
+        </div>
+      `;
+
+      phase.weeks.forEach(week => {
+        const key = phase.phase + "|" + week.title;
+        const isOpen = openWeeks.has(key);
+        const { total: wt, done: wd } = countWeekTasks(week);
+        const weekClass = week.portfolio ? 'portfolio' : (week.program ? 'program' : '');
+
+        html += `<div class="week-block ${weekClass}">
+          <div class="week-head" data-week="${key}">
+            <div class="week-head-left">
+              <span class="chevron ${isOpen ? "open" : ""}">▸</span>
+              <div>
+                <div class="week-title">${week.title}</div>
+                <div class="week-dates">${week.dates}</div>
+              </div>
+            </div>
+            <div class="week-progress-mini">${wd}/${wt} ${wd === wt ? "✅" : ""}</div>
+          </div>
+        `;
+
+        if (isOpen) {
+          html += `<div class="week-days">`;
+          week.days.forEach(day => {
+            if (day.rest) {
+              html += `<div class="day-row rest">
+                <div class="day-head">
+                  <span class="day-date">${day.date}</span>
+                  <span class="rest-tag">Descanso</span>
+                </div>
+              </div>`;
+            } else {
+              const allDone = day.taskIds.every(id => state[id]);
+              html += `<div class="day-row ${allDone ? "complete" : ""}">
+                <div class="day-head">
+                  <span class="day-date">${day.date}</span>
+                  <span class="day-focus">${day.focus}</span>
+                  ${allDone ? '<span style="margin-left:auto;font-size:11px;">✅</span>' : ""}
+                </div>
+                <div class="task-list">
+              `;
+              day.tasks.forEach((t, i) => {
+                const id = day.taskIds[i];
+                const checked = !!state[id];
+                html += `
+                  <div class="task-item" data-task="${id}">
+                    <div class="checkbox ${checked ? "checked" : ""}">
+                      <svg viewBox="0 0 24 24" fill="none"><path d="M4 12l6 6L20 6" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div class="task-text ${checked ? "checked" : ""}">${t}</div>
+                  </div>
+                `;
+              });
+              html += `</div></div>`;
+            }
+          });
+          html += `</div>`;
+        }
+
+        html += `</div>`;
+      });
+    });
+
+    html += `
+      </div>
+      <div class="footer-note">
+        Tu progreso se guarda automáticamente. Si un día no llegas a las 3-4 horas completas, no pasa nada — marca lo que sí lograste y sigue mañana. Lo importante es no perder más de 1-2 días seguidos sin avanzar.
+        <br/>
+        <button class="reset-btn" id="reset-btn">Reiniciar progreso</button>
+      </div>
+    `;
+
+    root.innerHTML = html;
+
+    root.querySelectorAll(".week-head").forEach(el => {
+      el.addEventListener("click", () => toggleWeek(el.dataset.week));
+    });
+    root.querySelectorAll(".task-item").forEach(el => {
+      el.addEventListener("click", () => toggleTask(el.dataset.task));
+    });
+    const resetBtn = document.getElementById("reset-btn");
+    if (resetBtn) resetBtn.addEventListener("click", resetProgress);
+  }
+
+  loadState();
+})();
+</script>

@@ -1,6 +1,7 @@
 import {
   CreateSetInput,
   SessionDetail,
+  SetType,
   WorkoutSession,
   WorkoutSet,
 } from "@/lib/types/sessions";
@@ -55,6 +56,7 @@ export async function updateSet(
     weight?: number | null;
     reps?: number;
     rir?: number | null;
+    setType?: SetType;
     isCompleted?: boolean;
   },
 ): Promise<WorkoutSet> {

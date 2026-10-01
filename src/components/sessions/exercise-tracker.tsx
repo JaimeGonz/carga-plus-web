@@ -1,17 +1,20 @@
 "use client";
 
-import { createSet, updateSet } from "@/lib/api/sessions";
-import { PreviousSetValues, WorkoutSet } from "@/lib/types/sessions";
+import { createSet, deleteSet, updateSet } from "@/lib/api/sessions";
+import { PreviousSetValues, SetType, WorkoutSet } from "@/lib/types/sessions";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { AlertCircle, Check, Plus, X } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { SetTypeSelector } from "@/components/sessions/set-type-selector";
+import { RirSelector } from "@/components/sessions/rir-selector";
 
 interface DraftRow {
   weight: string;
   reps: string;
   rir: string;
+  setType: SetType;
 }
 
 export function ExerciseTracker({
@@ -65,6 +68,7 @@ export function ExerciseTracker({
       const weightValue = getFieldValue(rowIndex, "weight");
       const repsValue = getFieldValue(rowIndex, "reps");
       const rirValue = getFieldValue(rowIndex, "rir");
+      const setTypeValue = drafts[rowIndex]?.setType ?? "NORMAL";
 
       if (existingSetId) {
         const current = existingSets.find((s) => s.id === existingSetId);
@@ -91,6 +95,7 @@ export function ExerciseTracker({
           reps: Number(repsValue),
           rir: rirValue ? Number(rirValue) : null,
           isCompleted: true,
+          setType: setTypeValue,
         });
       }
 
@@ -99,6 +104,7 @@ export function ExerciseTracker({
         weight: weightValue ? Number(weightValue) : null,
         reps: Number(repsValue),
         rir: rirValue ? Number(rirValue) : null,
+        setType: setTypeValue,
       });
 
       return updateSet(sessionId, created.id, { isCompleted: true });
@@ -106,6 +112,10 @@ export function ExerciseTracker({
     onSuccess: (result, variables) => {
       if (result.isCompleted) {
         setPulseRowIndex(variables.rowIndex);
+
+        if (variables.rowIndex >= targetSets) {
+          setExtraRows((n) => Math.max(0, n - 1));
+        }
       }
     },
     onSettled: (_data, _error, variables) => {
@@ -114,6 +124,31 @@ export function ExerciseTracker({
         next.delete(variables.rowIndex);
         return next;
       });
+      queryClient.invalidateQueries({
+        queryKey: ["session", String(sessionId)],
+      });
+    },
+  });
+
+  const { mutate: removeSet } = useMutation({
+    mutationFn: ({ setId }: { setId: number; rowIndex: number }) =>
+      deleteSet(sessionId, setId),
+    onSuccess: (_data, variables) => {
+      setDrafts((d) => {
+        const updated = { ...d };
+        delete updated[variables.rowIndex];
+        return updated;
+      });
+      queryClient.invalidateQueries({
+        queryKey: ["session", String(sessionId)],
+      });
+    },
+  });
+
+  const { mutate: changeSetType } = useMutation({
+    mutationFn: ({ setId, setType }: { setId: number; setType: SetType }) =>
+      updateSet(sessionId, setId, { setType }),
+    onSuccess: () => {
       queryClient.invalidateQueries({
         queryKey: ["session", String(sessionId)],
       });
@@ -161,7 +196,31 @@ export function ExerciseTracker({
                 } ${pulseRowIndex === i ? "animate-row-pulse" : ""}`}
               >
                 <td className="py-2 px-1 text-center font-heading text-lg text-primary">
-                  {i + 1}
+                  <SetTypeSelector
+                    currentOrder={i + 1}
+                    currentType={
+                      existing?.setType ?? drafts[i]?.setType ?? "NORMAL"
+                    }
+                    onSelect={(type) => {
+                      if (existing) {
+                        changeSetType({ setId: existing.id, setType: type });
+                      } else {
+                        setDrafts((d) => ({
+                          ...d,
+                          [i]: { ...d[i], setType: type },
+                        }));
+                      }
+                    }}
+                    onDelete={() => {
+                      {
+                        if (existing) {
+                          removeSet({ setId: existing.id, rowIndex: i });
+                        } else if (i === totalRows - 1 && extraRows > 0) {
+                          setExtraRows((n) => n - 1);
+                        }
+                      }
+                    }}
+                  />
                 </td>
                 <td className="py-2 px-1 text-xs text-muted-foreground truncate">
                   {prev ? `${prev.weight ?? "-"}kg x ${prev.reps}` : "—"}
@@ -207,15 +266,13 @@ export function ExerciseTracker({
                       {existing.rir ?? "-"}
                     </p>
                   ) : (
-                    <Input
-                      type="number"
-                      value={getFieldValue(i, "rir")}
-                      onChange={(e) => updateDraft(i, "rir", e.target.value)}
-                      className={`h-9 text-center px-1 ${
-                        !isFieldEdited(i, "rir") ? "text-muted-foreground" : ""
-                      }`}
-                      min={0}
-                      max={5} // valores mayores no aportan info útil de esfuerzo real, ya son series lejos del fallo
+                    <RirSelector
+                      value={
+                        getFieldValue(i, "rir")
+                          ? Number(getFieldValue(i, "rir"))
+                          : null
+                      }
+                      onChange={(v) => updateDraft(i, "rir", v.toString())}
                     />
                   )}
                 </td>

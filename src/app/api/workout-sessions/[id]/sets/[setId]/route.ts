@@ -42,7 +42,7 @@ export async function DELETE(
   }
 
   const backendRes = await backendFetch(
-    `/workout-sessins/${id}/sets/${setId}`,
+    `/workout-sessions/${id}/sets/${setId}`,
     {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
